@@ -13,8 +13,9 @@ class ViewController: UIViewController, UISearchBarDelegate, UITableViewDelegate
     
     private let baseURL = "https://fileupload.rick-and-friends.site/search?keyword="
     
-    @IBOutlet weak var searchBar: UISearchBar!
-    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet private weak var searchBar: UISearchBar!
+    @IBOutlet private weak var tableView: UITableView!
+    
     
     private var results: [String] = []
     private var searchTask: DispatchWorkItem?
@@ -32,12 +33,14 @@ class ViewController: UIViewController, UISearchBarDelegate, UITableViewDelegate
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchTask?.cancel()
+        //TODO: - introduce complexity
         searchTask = DispatchWorkItem { [weak self] in
-            print("making API call")
+            debugPrint("making API call")
             guard let self = self else { return }
             self.fetchResults(for: searchText)
         }
         
+        //TODO: - remove debouncing
         if let task = searchTask {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: task)
         }
@@ -45,9 +48,11 @@ class ViewController: UIViewController, UISearchBarDelegate, UITableViewDelegate
     
     private func fetchResults(for query: String) {
         guard !query.isEmpty else { return }
+        //TODO: - remove cancellation
         currentTask?.cancel()
         
         //TODO: - implement logic
+        //TODO: - introduce complexity - secure storage
         guard let apiKey = UserDefaults.standard.string(forKey: "apiKey") else {
             print("Error: API Key is missing")
             return
@@ -57,12 +62,14 @@ class ViewController: UIViewController, UISearchBarDelegate, UITableViewDelegate
         
         guard let url = URL(string: urlString) else { return }
         
+        //TODO: - introduce complexity
         currentTask = URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else { return }
             
             do {
                 let decodedResponse = try JSONDecoder().decode(Response.self, from: data)
                 self.results = decodedResponse.results.map{ $0.key }
+                //TODO: - introduce complexity
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
                     self.tableView.reloadData()
@@ -100,4 +107,10 @@ struct Result: Codable {
     let uploaded: String
     let url: String
 }
+
+//Complexities to resolve
+// 1 - fix memory leaks retain cycles
+// 2 - fix wrong usage of threads
+// 3 - implement search cancel button delegate and remove the extra call on cancel button & remove extra calls on empty spaces
+// 4 - convert the code to mvvm
 
